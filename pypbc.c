@@ -403,10 +403,10 @@ int Element_init(PyObject *element_py, PyObject *args, PyObject *kwargs) {
     // required arguments are the pairing and the group
     PyObject *pairing_py;
     enum Group group;
-    char *string = NULL;
+    char *element_string = NULL;
     PyObject *val_py = NULL;
-    char *keys[] = {"pairing", "group", "value", "string", NULL};
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "Oi|$Os", keys, &pairing_py, &group, &val_py, &string)) {
+    char *keys[] = {"pairing", "group", "value", "element_string", NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "Oi|$Os", keys, &pairing_py, &group, &val_py, &element_string)) {
         PyErr_SetString(PyExc_TypeError, "could not parse arguments");
         return -1;
     }
@@ -429,10 +429,10 @@ int Element_init(PyObject *element_py, PyObject *args, PyObject *kwargs) {
     element->group = group;
     element->pairing = pairing_py;
     // check the arguments
-    if (string && !val_py) {
+    if (element_string && !val_py) {
         // set the element to the string
-        element_set_str(element->pbc_element, string, 10);
-    } else if (val_py && !string) {
+        element_set_str(element->pbc_element, element_string, 10);
+    } else if (val_py && !element_string) {
         // check the type of the value
         if (!PyLong_Check(val_py)) {
             PyErr_SetString(PyExc_TypeError, "'value' should be an integer");

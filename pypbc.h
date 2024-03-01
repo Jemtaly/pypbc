@@ -31,8 +31,8 @@ enum Group {G1, G2, GT, Zr};
 // the param type
 typedef struct {
     PyObject_HEAD
-    pbc_param_t pbc_params;
     int ready;
+    pbc_param_t pbc_params;
 } Parameters;
 
 Parameters *Parameters_create();
@@ -47,8 +47,8 @@ PyTypeObject ParametersType;
 // the pairing type
 typedef struct {
     PyObject_HEAD
-    pairing_t pbc_pairing;
     int ready;
+    pairing_t pbc_pairing;
 } Pairing;
 
 Pairing *Pairing_create();
@@ -63,17 +63,16 @@ PyTypeObject PairingType;
 // the element type
 typedef struct {
     PyObject_HEAD
-    enum Group group;
-    PyObject *pairing;
-    element_t pbc_element;
     int ready;
+    element_t pbc_element;
+    Pairing *pairing;
 } Element;
 
 Element *Element_create();
-PyMemberDef Element_members[];
-PyMethodDef Element_methods[];
-PyTypeObject ElementType;
-
 PyObject *Element_new(PyTypeObject *type, PyObject *args, PyObject *kwargs);
 int Element_init(PyObject *self, PyObject *args, PyObject *kwargs);
 void Element_dealloc(Element *element);
+
+PyMemberDef Element_members[];
+PyMethodDef Element_methods[];
+PyTypeObject ElementType;

@@ -87,6 +87,7 @@ The following methods are available in the `pypbc` module:
 - `__int__(self) -> int`: Return the integer representation of the element (if possible).
 - `__getitem__(self, index: int) -> Element`: Return the i-th item of the element (if possible).
 - `__len__(self) -> int`: Return the length of the element, returns 0 if the element is not a vector.
+- `__hash__(self) -> int`: Return the hash value of the elemrnt.
 
 #### Arithmetic Operations
 

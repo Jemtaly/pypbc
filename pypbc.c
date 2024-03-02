@@ -19,18 +19,27 @@
 
 // initialize a GMP integer from a Python number
 void mpz_init_from_pynum(mpz_t mpz_n, PyObject *py_n) {
+    // convert the number to a Unicode string
     PyObject *py_n_unicode = PyNumber_ToBase(py_n, 10);
+    // convert the Unicode string to an ASCII string
     PyObject *py_n_bytes = PyUnicode_AsASCIIString(py_n_unicode);
+    // get the C string from the ASCII string
     char *str_n = PyBytes_AsString(py_n_bytes);
+    // initialize the GMP integer from the ASCII string
     mpz_init_set_str(mpz_n, str_n, 10);
+    // decrement the reference count on the objects
     Py_DECREF(py_n_unicode);
+    // decrement the reference count on the objects
     Py_DECREF(py_n_bytes);
 }
 
 // get a Python number from a GMP integer
 PyObject *mpz_to_pynum(mpz_t mpz_n) {
+    // convert the GMP integer to a C string
     char *str_n = mpz_get_str(NULL, 10, mpz_n);
+    // convert the C string to a Python number
     PyObject *py_n = PyLong_FromString(str_n, NULL, 10);
+    // free the string
     free(str_n);
     return py_n;
 }
@@ -288,9 +297,9 @@ PyMemberDef Pairing_members[] = {
 };
 
 PyMethodDef Pairing_methods[] = {
-    {"apply", Pairing_apply, METH_VARARGS, "Applies the pairing."},
-    {"order", Pairing_order, METH_NOARGS, "Returns the order of the pairing."},
-    {"is_symmetric", Pairing_is_symmetric, METH_NOARGS, "Returns whether the pairing is symmetric."},
+    {"apply", (PyCFunction)Pairing_apply, METH_VARARGS, "Applies the pairing."},
+    {"order", (PyCFunction)Pairing_order, METH_NOARGS, "Returns the order of the pairing."},
+    {"is_symmetric", (PyCFunction)Pairing_is_symmetric, METH_NOARGS, "Returns whether the pairing is symmetric."},
     {NULL},
 };
 
@@ -1120,6 +1129,24 @@ PyObject *Element_str(PyObject *py_element) {
     return PyUnicode_FromStringAndSize(buffer, size);
 }
 
+Py_hash_t Element_hash(PyObject *py_element) {
+    // cast the argument
+    Element *element = (Element *)py_element;
+    // get the size of the buffer and allocate it
+    int size = element_length_in_bytes(element->pbc_element);
+    unsigned char buffer[size];
+    // convert the element to bytes
+    element_to_bytes(buffer, element->pbc_element);
+    // initialize the hash with the field of the element
+    Py_hash_t hash = (Py_hash_t)element->pbc_element->field;
+    // mix the bytes into the hash
+    for (int i = 0; i < size; i++) {
+        hash ^= buffer[i];
+        hash *= 16777619;
+    }
+    return hash;
+}
+
 PyObject *Element_order(PyObject *py_element) {
     // cast the argument
     Element *element = (Element *)py_element;
@@ -1209,7 +1236,7 @@ PyTypeObject ElementType = {
     &Element_num_meths,                       /* tp_as_number */
     &Element_sq_meths,                        /* tp_as_sequence */
     0,                                        /* tp_as_mapping */
-    0,                                        /* tp_hash */
+    Element_hash,                             /* tp_hash */
     0,                                        /* tp_call */
     Element_str,                              /* tp_str */
     0,                                        /* tp_getattro */

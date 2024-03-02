@@ -44,9 +44,7 @@ PyDoc_STRVAR(Parameters__doc__,
     "\n"
     "There are three basic ways to instantiate a Parameters object:\n"
     "\n"
-    "Parameters(param_string=s) -> a set of parameters built according to s\n"
-    "Parameters(n=x, short=True||False) -> a type F or A1 curve\n"
-    "Parameters(qbits=q, rbits=r, short=True||False) -> type E or A curve\n"
+    "Parameters(param_string) -> a set of parameters built according to s\n"
     "\n"
     "These objects are essentially only used for creating Pairings.");
 
@@ -78,61 +76,15 @@ void Parameters_dealloc(Parameters *params) {
     Py_TYPE(params)->tp_free((PyObject *)params);
 }
 
-int Parameters_init(Parameters *params, PyObject *args, PyObject *kwargs) {
-    // we have a few different ways to initialize the Parameters
-    char *kwds[] = {"param_string", "n", "qbits", "rbits", "short", NULL};
+int Parameters_init(Parameters *params, PyObject *args) {
+    // only argument is the parameter string
     char *param_string = NULL;
-    PyObject *py_n = NULL;
-    int qbits = 0;
-    int rbits = 0;
-    PyObject *is_short = NULL;
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "|$sOiiO", kwds, &param_string, &py_n, &qbits, &rbits, &is_short)) {
+    if (!PyArg_ParseTuple(args, "s", &param_string)) {
         PyErr_SetString(PyExc_TypeError, "could not parse arguments");
         return -1;
     }
-    // check the type of the argument
-    if (is_short && !PyBool_Check(is_short)) {
-        PyErr_SetString(PyExc_TypeError, "'short' must be a boolean");
-        return -1;
-    }
-    // check the arguments
-    if (param_string && !py_n && !qbits && !rbits && !is_short) {
-        // initialize the parameters from a string
-        pbc_param_init_set_str(params->pbc_params, param_string);
-    } else if (py_n && !qbits && !rbits && !param_string) {
-        // check the type of the argument
-        if (!PyLong_Check(py_n)) {
-            PyErr_SetString(PyExc_TypeError, "'n' must be an integer");
-            return -1;
-        }
-        // initialize the parameters from n
-        if (is_short == Py_True) {
-            // cast the argument
-            Py_ssize_t bits = PyNumber_AsSsize_t(py_n, PyExc_OverflowError);
-            // initialize a type F curve
-            pbc_param_init_f_gen(params->pbc_params, (int)bits);
-        } else {
-            // convert the argument to an mpz
-            mpz_t mpz_n;
-            mpz_init_from_pynum(mpz_n, py_n);
-            // initialize a type A1 curve
-            pbc_param_init_a1_gen(params->pbc_params, mpz_n);
-            // clear the mpz
-            mpz_clear(mpz_n);
-        }
-    } else if (qbits && rbits && !py_n && !param_string) {
-        // initialize the parameters from qbits and rbits
-        if (is_short == Py_True) {
-            // initialize a type E curve
-            pbc_param_init_e_gen(params->pbc_params, rbits, qbits);
-        } else {
-            // initialize a type A curve
-            pbc_param_init_a_gen(params->pbc_params, rbits, qbits);
-        }
-    } else {
-        PyErr_SetString(PyExc_ValueError, "too many or too few arguments");
-        return -1;
-    }
+    // initialize the parameters from a string
+    pbc_param_init_set_str(params->pbc_params, param_string);
     // set the ready flag
     params->ready = 1;
     return 0;
@@ -392,8 +344,7 @@ PyDoc_STRVAR(Element__doc__,
     "\n"
     "Basic usage:\n"
     "\n"
-    "Element(pairing, Zr, value=int) -> Element\n"
-    "Element(pairing, G1||G2||GT||Zr, string=str) -> Element\n"
+    "Element(pairing, Zr, element_string) -> Element\n"
     "\n"
     "Most of the basic arithmetic operations apply. Please note that many of them\n"
     "do not make sense between groups, and that not all of these are checked for.");
@@ -427,14 +378,12 @@ void Element_dealloc(Element *element) {
     Py_TYPE(element)->tp_free((PyObject *)element);
 }
 
-int Element_init(PyObject *py_element, PyObject *args, PyObject *kwargs) {
+int Element_init(PyObject *py_element, PyObject *args) {
     // required arguments are the pairing and the group
     PyObject *py_pairing;
     enum Group group;
     char *element_string = NULL;
-    PyObject *py_val = NULL;
-    char *keys[] = {"pairing", "group", "value", "element_string", NULL};
-    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "Oi|$Os", keys, &py_pairing, &group, &py_val, &element_string)) {
+    if (!PyArg_ParseTuple(args, "Ois", &py_pairing, &group, &element_string)) {
         PyErr_SetString(PyExc_TypeError, "could not parse arguments");
         return -1;
     }
@@ -455,36 +404,49 @@ int Element_init(PyObject *py_element, PyObject *args, PyObject *kwargs) {
     default: PyErr_SetString(PyExc_ValueError, "invalid group"); return -1;
     }
     element->pairing = pairing;
-    // check the arguments
-    if (element_string && !py_val) {
-        // set the element to the string
-        element_set_str(element->pbc_element, element_string, 10);
-    } else if (py_val && !element_string) {
-        // check the type of the value
-        if (!PyLong_Check(py_val)) {
-            PyErr_SetString(PyExc_TypeError, "'value' should be an integer");
-            return -1;
-        }
-        // make sure the group is Zr
-        if (group != Zr) {
-            PyErr_SetString(PyExc_TypeError, "cannot provide a integer value for a non-Zr group");
-            return -1;
-        }
-        // convert the value to an mpz
-        mpz_t mpz_val;
-        mpz_init_from_pynum(mpz_val, py_val);
-        // set the element to the value
-        element_set_mpz(element->pbc_element, mpz_val);
-        // clean up the mpz
-        mpz_clear(mpz_val);
-    } else {
-        PyErr_SetString(PyExc_ValueError, "too many or too few arguments");
-        return -1;
-    }
+    // set the element to the string
+    element_set_str(element->pbc_element, element_string, 10);
     // increment the reference count on the pairing and set the ready flag
-    Py_INCREF(py_pairing);
+    Py_INCREF(element->pairing);
     element->ready = 1;
     return 0;
+}
+
+PyObject *Element_from_int(PyObject *cls, PyObject *args) {
+    // required arguments are the pairing and the group
+    PyObject *py_pairing;
+    PyObject *py_val;
+    if (!PyArg_ParseTuple(args, "OO", &py_pairing, &py_val)) {
+        PyErr_SetString(PyExc_TypeError, "could not parse arguments");
+        return NULL;
+    }
+    // check the type of arguments
+    if (!PyObject_TypeCheck(py_pairing, &PairingType)) {
+        PyErr_SetString(PyExc_TypeError, "the first argument should be a Pairing object");
+        return NULL;
+    }
+    // cast the arguments
+    Pairing *pairing = (Pairing *)py_pairing;
+    // check the type of the number
+    if (!PyLong_Check(py_val)) {
+        PyErr_SetString(PyExc_TypeError, "the second argument should be an integer");
+        return NULL;
+    }
+    // convert the number to an mpz_t
+    mpz_t mpz_val;
+    mpz_init_from_pynum(mpz_val, py_val);
+    // build the result element and initialize it with the pairing and group
+    Element *element = Element_create();
+    element_init_Zr(element->pbc_element, pairing->pbc_pairing);
+    element->pairing = pairing;
+    // set the element to the number
+    element_set_mpz(element->pbc_element, mpz_val);
+    // clear the mpz_t
+    mpz_clear(mpz_val);
+    // increment the reference count on the pairing and set the ready flag
+    Py_INCREF(element->pairing);
+    element->ready = 1;
+    return (PyObject *)element;
 }
 
 PyObject *Element_zero(PyObject *cls, PyObject *args) {
@@ -504,24 +466,23 @@ PyObject *Element_zero(PyObject *cls, PyObject *args) {
     Pairing *pairing = (Pairing *)py_pairing;
     // build the result element and initialize it with the pairing and group
     Element *element = Element_create();
-    PyObject *py_element = (PyObject *)element;
     switch (group) {
     case G1: element_init_G1(element->pbc_element, pairing->pbc_pairing); break;
     case G2: element_init_G2(element->pbc_element, pairing->pbc_pairing); break;
     case GT: element_init_GT(element->pbc_element, pairing->pbc_pairing); break;
     case Zr: element_init_Zr(element->pbc_element, pairing->pbc_pairing); break;
-    default: Py_DECREF(py_element); PyErr_SetString(PyExc_ValueError, "invalid group"); return NULL;
+    default: Py_DECREF(element); PyErr_SetString(PyExc_ValueError, "invalid group"); return NULL;
     }
     element->pairing = pairing;
     // set the element to 0
     element_set0(element->pbc_element);
     // increment the reference count on the pairing and set the ready flag
-    Py_INCREF(py_pairing);
+    Py_INCREF(element->pairing);
     element->ready = 1;
     return (PyObject *)element;
 }
 
-PyObject *Element_one(PyObject *cls, PyObject *args, PyObject *kwargs) {
+PyObject *Element_one(PyObject *cls, PyObject *args) {
     // required arguments are the pairing and the group
     PyObject *py_pairing;
     enum Group group;
@@ -538,19 +499,18 @@ PyObject *Element_one(PyObject *cls, PyObject *args, PyObject *kwargs) {
     Pairing *pairing = (Pairing *)py_pairing;
     // build the result element and initialize it with the pairing and group
     Element *element = Element_create();
-    PyObject *py_element = (PyObject *)element;
     switch (group) {
     case G1: element_init_G1(element->pbc_element, pairing->pbc_pairing); break;
     case G2: element_init_G2(element->pbc_element, pairing->pbc_pairing); break;
     case GT: element_init_GT(element->pbc_element, pairing->pbc_pairing); break;
     case Zr: element_init_Zr(element->pbc_element, pairing->pbc_pairing); break;
-    default: Py_DECREF(py_element); PyErr_SetString(PyExc_ValueError, "invalid group"); return NULL;
+    default: Py_DECREF(element); PyErr_SetString(PyExc_ValueError, "invalid group"); return NULL;
     }
     element->pairing = pairing;
     // set the element to 1
     element_set1(element->pbc_element);
     // increment the reference count on the pairing and set the ready flag
-    Py_INCREF(py_pairing);
+    Py_INCREF(element->pairing);
     element->ready = 1;
     return (PyObject *)element;
 }
@@ -572,19 +532,18 @@ PyObject *Element_random(PyObject *cls, PyObject *args) {
     Pairing *pairing = (Pairing *)py_pairing;
     // build the result element and initialize it with the pairing and group
     Element *element = Element_create();
-    PyObject *py_element = (PyObject *)element;
     switch (group) {
     case G1: element_init_G1(element->pbc_element, pairing->pbc_pairing); break;
     case G2: element_init_G2(element->pbc_element, pairing->pbc_pairing); break;
     case GT: element_init_GT(element->pbc_element, pairing->pbc_pairing); break;
     case Zr: element_init_Zr(element->pbc_element, pairing->pbc_pairing); break;
-    default: Py_DECREF(py_element); PyErr_SetString(PyExc_ValueError, "invalid group"); return NULL;
+    default: Py_DECREF(element); PyErr_SetString(PyExc_ValueError, "invalid group"); return NULL;
     }
     element->pairing = pairing;
     // make the element random
     element_random(element->pbc_element);
     // increment the reference count on the pairing and set the ready flag
-    Py_INCREF(py_pairing);
+    Py_INCREF(element->pairing);
     element->ready = 1;
     return (PyObject *)element;
 }
@@ -611,13 +570,12 @@ PyObject *Element_from_hash(PyObject *cls, PyObject *args) {
     Pairing *pairing = (Pairing *)py_pairing;
     // build the result element and initialize it with the pairing and group
     Element *element = Element_create();
-    PyObject *py_element = (PyObject *)element;
     switch (group) {
     case G1: element_init_G1(element->pbc_element, pairing->pbc_pairing); break;
     case G2: element_init_G2(element->pbc_element, pairing->pbc_pairing); break;
     case GT: element_init_GT(element->pbc_element, pairing->pbc_pairing); break;
     case Zr: element_init_Zr(element->pbc_element, pairing->pbc_pairing); break;
-    default: Py_DECREF(py_element); PyErr_SetString(PyExc_ValueError, "invalid group"); return NULL;
+    default: Py_DECREF(element); PyErr_SetString(PyExc_ValueError, "invalid group"); return NULL;
     }
     element->pairing = pairing;
     // convert the bytes to an element
@@ -625,7 +583,7 @@ PyObject *Element_from_hash(PyObject *cls, PyObject *args) {
     unsigned char *string = (unsigned char *)PyBytes_AsString(bytes);
     element_from_hash(element->pbc_element, string, size);
     // increment the reference count on the pairing and set the ready flag
-    Py_INCREF(py_pairing);
+    Py_INCREF(element->pairing);
     element->ready = 1;
     return (PyObject *)element;
 }
@@ -652,20 +610,19 @@ PyObject *Element_from_bytes(PyObject *cls, PyObject *args) {
     Pairing *pairing = (Pairing *)py_pairing;
     // build the result element and initialize it with the pairing and group
     Element *element = Element_create();
-    PyObject *py_element = (PyObject *)element;
     switch (group) {
     case G1: element_init_G1(element->pbc_element, pairing->pbc_pairing); break;
     case G2: element_init_G2(element->pbc_element, pairing->pbc_pairing); break;
     case GT: element_init_GT(element->pbc_element, pairing->pbc_pairing); break;
     case Zr: element_init_Zr(element->pbc_element, pairing->pbc_pairing); break;
-    default: Py_DECREF(py_element); PyErr_SetString(PyExc_ValueError, "invalid group"); return NULL;
+    default: Py_DECREF(element); PyErr_SetString(PyExc_ValueError, "invalid group"); return NULL;
     }
     element->pairing = pairing;
     // convert the bytes to an element
     unsigned char *string = (unsigned char *)PyBytes_AsString(bytes);
     element_from_bytes(element->pbc_element, string);
     // increment the reference count on the pairing and set the ready flag
-    Py_INCREF(py_pairing);
+    Py_INCREF(element->pairing);
     element->ready = 1;
     return (PyObject *)element;
 }
@@ -692,20 +649,19 @@ PyObject *Element_from_bytes_compressed(PyObject *cls, PyObject *args) {
     Pairing *pairing = (Pairing *)py_pairing;
     // build the result element and initialize it with the pairing and group
     Element *element = Element_create();
-    PyObject *py_element = (PyObject *)element;
     switch (group) {
     case G1: element_init_G1(element->pbc_element, pairing->pbc_pairing); break;
     case G2: element_init_G2(element->pbc_element, pairing->pbc_pairing); break;
     case GT:
-    case Zr: Py_DECREF(py_element); PyErr_SetString(PyExc_ValueError, "only Elements in G1 or G2 can be created from compressed bytes"); return NULL;
-    default: Py_DECREF(py_element); PyErr_SetString(PyExc_ValueError, "invalid group"); return NULL;
+    case Zr: Py_DECREF(element); PyErr_SetString(PyExc_ValueError, "only Elements in G1 or G2 can be created from compressed bytes"); return NULL;
+    default: Py_DECREF(element); PyErr_SetString(PyExc_ValueError, "invalid group"); return NULL;
     }
     element->pairing = pairing;
     // convert the bytes to an element
     unsigned char *string = (unsigned char *)PyBytes_AsString(bytes);
     element_from_bytes_compressed(element->pbc_element, string);
     // increment the reference count on the pairing and set the ready flag
-    Py_INCREF(py_pairing);
+    Py_INCREF(element->pairing);
     element->ready = 1;
     return (PyObject *)element;
 }
@@ -732,20 +688,19 @@ PyObject *Element_from_bytes_x_only(PyObject *cls, PyObject *args) {
     Pairing *pairing = (Pairing *)py_pairing;
     // build the result element and initialize it with the pairing and group
     Element *element = Element_create();
-    PyObject *py_element = (PyObject *)element;
     switch (group) {
     case G1: element_init_G1(element->pbc_element, pairing->pbc_pairing); break;
     case G2: element_init_G2(element->pbc_element, pairing->pbc_pairing); break;
     case GT:
-    case Zr: Py_DECREF(py_element); PyErr_SetString(PyExc_ValueError, "only Elements in G1 or G2 can be created from x-only bytes"); return NULL;
-    default: Py_DECREF(py_element); PyErr_SetString(PyExc_ValueError, "invalid group"); return NULL;
+    case Zr: Py_DECREF(element); PyErr_SetString(PyExc_ValueError, "only Elements in G1 or G2 can be created from x-only bytes"); return NULL;
+    default: Py_DECREF(element); PyErr_SetString(PyExc_ValueError, "invalid group"); return NULL;
     }
     element->pairing = pairing;
     // convert the bytes to an element
     unsigned char *string = (unsigned char *)PyBytes_AsString(bytes);
     element_from_bytes_x_only(element->pbc_element, string);
     // increment the reference count on the pairing and set the ready flag
-    Py_INCREF(py_pairing);
+    Py_INCREF(element->pairing);
     element->ready = 1;
     return (PyObject *)element;
 }
@@ -868,10 +823,6 @@ PyObject *Element_mult(PyObject *py_lft, PyObject *py_rgt) {
             ele_res->pairing = ele_lft->pairing;
             // multiply the two elements
             element_mul(ele_res->pbc_element, ele_lft->pbc_element, ele_rgt->pbc_element);
-            // increment the reference count on the pairing and set the ready flag
-            Py_INCREF(ele_res->pairing);
-            ele_res->ready = 1;
-            return (PyObject *)ele_res;
         } else if (ele_rgt->pbc_element->field == ele_lft->pairing->pbc_pairing->Zr && ele_lft->pbc_element->field->pairing) {
             // build the result element and initialize it to the same group as the left element
             ele_res = Element_create();
@@ -1181,18 +1132,19 @@ PyMemberDef Element_members[] = {
 };
 
 PyMethodDef Element_methods[] = {
-    {"from_hash", (PyCFunction)Element_from_hash, METH_VARARGS | METH_CLASS, "Creates an Element from the given hash value."},
-    {"random", (PyCFunction)Element_random, METH_VARARGS | METH_CLASS, "Creates a random element from the given group."},
     {"zero", (PyCFunction)Element_zero, METH_VARARGS | METH_CLASS, "Creates an element representing the additive identity for its group."},
     {"one", (PyCFunction)Element_one, METH_VARARGS | METH_CLASS, "Creates an element representing the multiplicative identity for its group."},
-    {"to_bytes", (PyCFunction)Element_to_bytes, METH_NOARGS, "Converts the element to a byte string."},
-    {"to_bytes_x_only", (PyCFunction)Element_to_bytes_x_only, METH_NOARGS, "Converts the element to a byte string using the x-only format."},
-    {"to_bytes_compressed", (PyCFunction)Element_to_bytes_compressed, METH_NOARGS, "Converts the element to a byte string using the compressed format."},
+    {"random", (PyCFunction)Element_random, METH_VARARGS | METH_CLASS, "Creates a random element from the given group."},
+    {"from_int", (PyCFunction)Element_from_int, METH_VARARGS | METH_CLASS, "Creates an element in Zr from the given integer."},
+    {"from_hash", (PyCFunction)Element_from_hash, METH_VARARGS | METH_CLASS, "Creates an Element from the given hash value."},
     {"from_bytes", (PyCFunction)Element_from_bytes, METH_VARARGS | METH_CLASS, "Creates an element from a byte string."},
     {"from_bytes_compressed", (PyCFunction)Element_from_bytes_compressed, METH_VARARGS | METH_CLASS, "Creates an element from a byte string using the compressed format."},
     {"from_bytes_x_only", (PyCFunction)Element_from_bytes_x_only, METH_VARARGS | METH_CLASS, "Creates an element from a byte string using the x-only format."},
-    {"is0", (PyCFunction)Element_is0, METH_NOARGS, "Returns True if the element is 0."},
-    {"is1", (PyCFunction)Element_is1, METH_NOARGS, "Returns True if the element is 1."},
+    {"to_bytes", (PyCFunction)Element_to_bytes, METH_NOARGS, "Converts the element to a byte string."},
+    {"to_bytes_x_only", (PyCFunction)Element_to_bytes_x_only, METH_NOARGS, "Converts the element to a byte string using the x-only format."},
+    {"to_bytes_compressed", (PyCFunction)Element_to_bytes_compressed, METH_NOARGS, "Converts the element to a byte string using the compressed format."},
+    {"is0", (PyCFunction)Element_is0, METH_NOARGS, "Returns True if the element is additive identity."},
+    {"is1", (PyCFunction)Element_is1, METH_NOARGS, "Returns True if the element is multiplicative identity."},
     {"order", (PyCFunction)Element_order, METH_NOARGS, "Returns the order of the element."},
     {NULL},
 };

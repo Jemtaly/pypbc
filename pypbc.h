@@ -37,7 +37,7 @@ typedef struct {
 
 Parameters *Parameters_create();
 PyObject *Parameters_new(PyTypeObject *type, PyObject *args, PyObject *kwds);
-int Parameters_init(Parameters *self, PyObject *args, PyObject *kwargs);
+int Parameters_init(Parameters *self, PyObject *args);
 void Parameters_dealloc(Parameters *parameter);
 
 PyMemberDef Parameters_members[];
@@ -70,7 +70,7 @@ typedef struct {
 
 Element *Element_create();
 PyObject *Element_new(PyTypeObject *type, PyObject *args, PyObject *kwargs);
-int Element_init(PyObject *self, PyObject *args, PyObject *kwargs);
+int Element_init(PyObject *self, PyObject *args);
 void Element_dealloc(Element *element);
 
 PyMemberDef Element_members[];

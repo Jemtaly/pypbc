@@ -48,48 +48,60 @@ assert pairing.apply(g1 ** z1, g2 ** z2) == pairing.apply(g1, g2) ** (z1 * z2)
 
 The following methods are available in the `pypbc` module:
 
-- `Parameters`
+### `Parameters`
 
-    - `__init__(self, string: str) -> None`: Initialize the parameters from a string.
-    - `__str__(self) -> str`: Return the string representation of the parameters.
+- `__init__(self, string: str) -> None`: Initialize the parameters from a string.
+- `__str__(self) -> str`: Return the string representation of the parameters.
 
-- `Pairing`
+### `Pairing`
     
-    - `__init__(self, params: Parameters) -> None`: Initialize the pairing from the given parameters.
-    - `order(self) -> int`: Return the order of the pairing.
-    - `apply(self, e1: Element, e2: Element) -> Element`: Apply the pairing to the given elements.
-    - `is_symmetric(self) -> bool`: Return whether the pairing is symmetric.
+- `__init__(self, params: Parameters) -> None`: Initialize the pairing from the given parameters.
+- `order(self) -> int`: Return the order of the pairing.
+- `apply(self, e1: Element, e2: Element) -> Element`: Apply the pairing to the given elements.
+- `is_symmetric(self) -> bool`: Return whether the pairing is symmetric.
 
-- `Element`
+### `Element`
     
-    - `__init__(self, pairing: Pairing, type: int, string: str) -> None`: Initialize the element from a string.
-    - `from_int(pairing: Pairing, value: int) -> Element`: Return an element in Zr from the given integer.
-    - `random(pairing: Pairing, type: int) -> Element`: Return a random element of the given type.
-    - `zero(pairing: Pairing, type: int) -> Element`: Return the additive identity element of the given type.
-    - `one(pairing: Pairing, type: int) -> Element`: Return the multiplicative identity element of the given type.
-    - `from_hash(pairing: Pairing, type: int, data: bytes) -> Element`: Return an element from the given hash.
-    - Serialize and Deserialize
-        - `to_bytes(self) -> bytes`: Return the byte representation of the element.
-        - `to_bytes_compressed(self) -> bytes`: Return the compressed byte representation of the element. (Only for G1 and G2 elements)
-        - `to_bytes_x_only(self) -> bytes`: Return the x-only byte representation of the element. (Only for G1 and G2 elements)
-        - `from_bytes(pairing: Pairing, type: int, data: bytes) -> Element`: Return an element from the given byte representation.
-        - `from_bytes_compressed(pairing: Pairing, type: int, data: bytes) -> Element`: Return an element from the given compressed byte representation. (Only for G1 and G2 elements)
-        - `from_bytes_x_only(pairing: Pairing, type: int, data: bytes) -> Element`: Return an element from the given x-only byte representation. (Only for G1 and G2 elements)
-    - `order`: Return the order of the element.
-    - `__str__(self) -> str`: Return the string representation of the element.
-    - `__int__(self) -> int`: Return the integer representation of the element (if possible).
-    - `__getitem__(self, index: int) -> int`: Return the i-th item of the element (if possible).
-    - `__len__(self) -> int`: Return the length of the element, returns 0 if the element is not a vector.
-    - Arithmetic Operations
-        - `__add__(self, other: Element) -> Element`: Return the sum of the elements.
-        - `__sub__(self, other: Element) -> Element`: Return the difference of the elements.
-        - `__mul__(self, other: Element | int) -> Element`: Return the product of the elements, same as `__add__` if the two operands are both in G1, G2 or GT, same as `__pow__` if one of the operands is an integer or an element of Zr.
-        - `__truediv__(self, other: Element) -> Element`: Return the quotient of the elements, same as `__sub__` if the two operands are both in G1, G2 or GT.
-        - `__pow__(self, other: Element | int) -> Element`: Return the power of the element, the exponent can be an integer or an element of Zr.
-        - `__neg__(self) -> Element`: Return the additive inverse of the element.
-        - `__invert__(self) -> Element`: Return the multiplicative inverse of the element, same as `__neg__` if the element is in G1, G2 or GT.
-    - Comparison Operations
-        - `__eq__(self, other: Element) -> bool`: Return whether the elements are equal.
-        - `__ne__(self, other: Element) -> bool`: Return whether the elements are not equal.
-        - `is0(self) -> bool`: Return whether the element is the additive identity.
-        - `is1(self) -> bool`: Return whether the element is the multiplicative identity.
+#### Constructors
+
+- `__init__(self, pairing: Pairing, type: int, string: str) -> None`: Initialize the element from a string.
+- `from_int(pairing: Pairing, value: int) -> Element`: Return an element in Zr from the given integer.
+- `random(pairing: Pairing, type: int) -> Element`: Return a random element of the given type.
+- `zero(pairing: Pairing, type: int) -> Element`: Return the additive identity element of the given type.
+- `one(pairing: Pairing, type: int) -> Element`: Return the multiplicative identity element of the given type.
+- `from_hash(pairing: Pairing, type: int, data: bytes) -> Element`: Return an element from the given hash.
+
+#### Serialize and Deserialize
+
+- `to_bytes(self) -> bytes`: Return the byte representation of the element.
+- `to_bytes_compressed(self) -> bytes`: Return the compressed byte representation of the element. (Only for G1 and G2 elements)
+- `to_bytes_x_only(self) -> bytes`: Return the x-only byte representation of the element. (Only for G1 and G2 elements)
+- `from_bytes(pairing: Pairing, type: int, data: bytes) -> Element`: Return an element from the given byte representation.
+- `from_bytes_compressed(pairing: Pairing, type: int, data: bytes) -> Element`: Return an element from the given compressed byte representation. (Only for G1 and G2 elements)
+- `from_bytes_x_only(pairing: Pairing, type: int, data: bytes) -> Element`: Return an element from the given x-only byte representation. (Only for G1 and G2 elements)
+
+#### Properties
+
+- `order(self)`: Return the order of the element.
+- `__str__(self) -> str`: Return the string representation of the element.
+- `__int__(self) -> int`: Return the integer representation of the element (if possible).
+- `__getitem__(self, index: int) -> int`: Return the i-th item of the element (if possible).
+- `__len__(self) -> int`: Return the length of the element, returns 0 if the element is not a vector.
+
+#### Arithmetic Operations
+
+- `__add__(self, other: Element) -> Element`: Return the sum of the elements.
+- `__sub__(self, other: Element) -> Element`: Return the difference of the elements.
+- `__mul__(self, other: Element | int) -> Element`: Return the product of the elements, same as `__add__` if the two operands are both in G1, G2 or GT, same as `__pow__` if one of the operands is an integer or an element of Zr.
+- `__truediv__(self, other: Element) -> Element`: Return the quotient of the elements, same as `__sub__` if the two operands are both in G1, G2 or GT.
+- `__pow__(self, other: Element | int) -> Element`: Return the power of the element, the exponent can be an integer or an element of Zr.
+- `__neg__(self) -> Element`: Return the additive inverse of the element.
+- `__invert__(self) -> Element`: Return the multiplicative inverse of the element, same as `__neg__` if the element is in G1, G2 or GT.
+
+#### Comparison Operations
+
+- `__eq__(self, other: Element) -> bool`: Return whether the elements are equal.
+- `__ne__(self, other: Element) -> bool`
+Return whether the elements are not equal.
+- `is0(self) -> bool`: Return whether the element is the additive identity.
+- `is1(self) -> bool`: Return whether the element is the multiplicative identity.

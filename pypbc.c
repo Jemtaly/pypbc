@@ -320,6 +320,17 @@ PyObject *Pairing_order(PyObject *py_pairing) {
     return mpz_to_pynum(pairing->pbc_pairing->r);
 }
 
+PyObject *Pairing_is_symmetric(PyObject *py_pairing) {
+    // cast the argument
+    Pairing *pairing = (Pairing *)py_pairing;
+    // return whether the pairing is symmetric
+    if (pairing->pbc_pairing->G1 == pairing->pbc_pairing->G2) {
+        Py_RETURN_TRUE;
+    } else {
+        Py_RETURN_FALSE;
+    }
+}
+
 PyMemberDef Pairing_members[] = {
     {NULL},
 };
@@ -327,6 +338,7 @@ PyMemberDef Pairing_members[] = {
 PyMethodDef Pairing_methods[] = {
     {"apply", Pairing_apply, METH_VARARGS, "Applies the pairing."},
     {"order", Pairing_order, METH_NOARGS, "Returns the order of the pairing."},
+    {"is_symmetric", Pairing_is_symmetric, METH_NOARGS, "Returns whether the pairing is symmetric."},
     {NULL},
 };
 
@@ -860,14 +872,14 @@ PyObject *Element_mult(PyObject *py_lft, PyObject *py_rgt) {
             Py_INCREF(ele_res->pairing);
             ele_res->ready = 1;
             return (PyObject *)ele_res;
-        } else if (ele_rgt->pbc_element->field == ele_lft->pairing->pbc_pairing->Zr && (ele_lft->pbc_element->field == ele_lft->pairing->pbc_pairing->G1 || ele_lft->pbc_element->field == ele_lft->pairing->pbc_pairing->G2 || ele_lft->pbc_element->field == ele_lft->pairing->pbc_pairing->GT)) {
+        } else if (ele_rgt->pbc_element->field == ele_lft->pairing->pbc_pairing->Zr && ele_lft->pbc_element->field->pairing) {
             // build the result element and initialize it to the same group as the left element
             ele_res = Element_create();
             element_init_same_as(ele_res->pbc_element, ele_lft->pbc_element);
             ele_res->pairing = ele_lft->pairing;
             // multiply the two elements
             element_mul_zn(ele_res->pbc_element, ele_lft->pbc_element, ele_rgt->pbc_element);
-        } else if (ele_lft->pbc_element->field == ele_rgt->pairing->pbc_pairing->Zr && (ele_rgt->pbc_element->field == ele_rgt->pairing->pbc_pairing->G1 || ele_rgt->pbc_element->field == ele_rgt->pairing->pbc_pairing->G2 || ele_rgt->pbc_element->field == ele_rgt->pairing->pbc_pairing->GT)) {
+        } else if (ele_lft->pbc_element->field == ele_rgt->pairing->pbc_pairing->Zr && ele_rgt->pbc_element->field->pairing) {
             // build the result element and initialize it to the same group as the right element
             ele_res = Element_create();
             element_init_same_as(ele_res->pbc_element, ele_rgt->pbc_element);
@@ -959,7 +971,7 @@ PyObject *Element_pow(PyObject *py_lft, PyObject *py_rgt, PyObject *py_mod) {
         // convert the second argument to an Element
         Element *ele_rgt = (Element *)py_rgt;
         // make sure the second element is in Zr
-        if (ele_rgt->pbc_element->field == ele_lft->pairing->pbc_pairing->Zr && (ele_lft->pbc_element->field == ele_lft->pairing->pbc_pairing->G1 || ele_lft->pbc_element->field == ele_lft->pairing->pbc_pairing->G2 || ele_lft->pbc_element->field == ele_lft->pairing->pbc_pairing->GT)) {
+        if (ele_rgt->pbc_element->field == ele_lft->pairing->pbc_pairing->Zr && (ele_lft->pbc_element->field == ele_lft->pairing->pbc_pairing->Zr || ele_lft->pbc_element->field->pairing)) {
             // build the result element
             ele_res = Element_create();
             element_init_same_as(ele_res->pbc_element, ele_lft->pbc_element);
@@ -967,7 +979,7 @@ PyObject *Element_pow(PyObject *py_lft, PyObject *py_rgt, PyObject *py_mod) {
             // raise the element to the power
             element_pow_zn(ele_res->pbc_element, ele_lft->pbc_element, ele_rgt->pbc_element);
         } else {
-            PyErr_SetString(PyExc_TypeError, "if the exponent is an Element, it must be in Zr and the base must be in G1, G2, or GT");
+            PyErr_SetString(PyExc_TypeError, "if the exponent is an Element, it must be in Zr and the base must be in Zr, G1, G2, or GT");
             return NULL;
         }
     } else if (PyLong_Check(py_rgt)) {

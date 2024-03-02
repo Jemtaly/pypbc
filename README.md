@@ -85,7 +85,7 @@ The following methods are available in the `pypbc` module:
 - `order(self)`: Return the order of the element.
 - `__str__(self) -> str`: Return the string representation of the element.
 - `__int__(self) -> int`: Return the integer representation of the element (if possible).
-- `__getitem__(self, index: int) -> int`: Return the i-th item of the element (if possible).
+- `__getitem__(self, index: int) -> Element`: Return the i-th item of the element (if possible).
 - `__len__(self) -> int`: Return the length of the element, returns 0 if the element is not a vector.
 
 #### Arithmetic Operations

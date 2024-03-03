@@ -108,7 +108,6 @@ The following methods are available in the `pypbc` module:
 #### Comparison Operations
 
 - `__eq__(self, other: Element) -> bool`: Return whether the elements are equal.
-- `__ne__(self, other: Element) -> bool`
-Return whether the elements are not equal.
+- `__ne__(self, other: Element) -> bool`: Return whether the elements are not equal.
 - `is0(self) -> bool`: Return whether the element is the additive identity.
 - `is1(self) -> bool`: Return whether the element is the multiplicative identity.

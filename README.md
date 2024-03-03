@@ -56,7 +56,7 @@ The following methods are available in the `pypbc` module:
 ### `Pairing`
     
 - `__init__(self, params: Parameters) -> None`: Initialize the pairing from the given parameters.
-- `order(self) -> int`: Return the order of the pairing.
+- `order(self) -> int`: Return the order of the pairing (Zr, G1, G2 and GT).
 - `apply(self, e1: Element, e2: Element) -> Element`: Apply the pairing to the given elements.
 - `is_symmetric(self) -> bool`: Return whether the pairing is symmetric.
 
@@ -83,10 +83,13 @@ The following methods are available in the `pypbc` module:
 #### Properties
 
 - `order(self)`: Return the order of the element.
+- `__getitem__(self, index: int) -> Element`: Return the i-th item of the element (if it is multidimensional).
+- `__len__(self) -> int`: Return the length of the element, returns 0 if the element is one-dimensional.
+
+#### Typecasting
+
 - `__str__(self) -> str`: Return the string representation of the element.
 - `__int__(self) -> int`: Return the integer representation of the element (if possible).
-- `__getitem__(self, index: int) -> Element`: Return the i-th item of the element (if possible).
-- `__len__(self) -> int`: Return the length of the element, returns 0 if the element is not a vector.
 
 #### Hashable
 

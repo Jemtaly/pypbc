@@ -1274,7 +1274,7 @@ PyMethodDef pypbc_methods[] = {
 PyModuleDef pypbc_module = {
     PyModuleDef_HEAD_INIT,
     "pypbc",
-    "pypbc",
+    "Python wrapper for the PBC (Pairing-Based Cryptography) library",
     -1,
     pypbc_methods,
 };

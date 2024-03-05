@@ -53,7 +53,7 @@ PyDoc_STRVAR(Parameters__doc__,
     "\n"
     "There are three basic ways to instantiate a Parameters object:\n"
     "\n"
-    "Parameters(param_string) -> a set of parameters built according to s\n"
+    "Parameters(string: str) -> Parameters\n"
     "\n"
     "These objects are essentially only used for creating Pairings.");
 
@@ -67,7 +67,6 @@ Parameters *Parameters_create(void) {
     }
     // set the ready flag to 0
     params->ready = 0;
-    // return the object
     return params;
 }
 
@@ -87,13 +86,13 @@ void Parameters_dealloc(Parameters *params) {
 
 int Parameters_init(Parameters *params, PyObject *args) {
     // only argument is the parameter string
-    char *param_string = NULL;
-    if (!PyArg_ParseTuple(args, "s", &param_string)) {
-        PyErr_SetString(PyExc_TypeError, "could not parse arguments");
+    char *string = NULL;
+    if (!PyArg_ParseTuple(args, "s", &string)) {
+        PyErr_SetString(PyExc_TypeError, "could not parse arguments, expected a string");
         return -1;
     }
     // initialize the parameters from a string
-    pbc_param_init_set_str(params->pbc_params, param_string);
+    pbc_param_init_set_str(params->pbc_params, string);
     // set the ready flag
     params->ready = 1;
     return 0;
@@ -177,7 +176,7 @@ PyDoc_STRVAR(Pairing__doc__,
     "\n"
     "Basic usage:\n"
     "\n"
-    "Pairing(params) -> Pairing object\n"
+    "Pairing(params: Parameters) -> Pairing\n"
     "\n"
     "This object is used to apply the bilinear map to two elements.");
 
@@ -191,7 +190,6 @@ Pairing *Pairing_create(void) {
     }
     // set the ready flag to 0
     pairing->ready = 0;
-    // return the object
     return pairing;
 }
 
@@ -212,13 +210,8 @@ void Pairing_dealloc(Pairing *pairing) {
 int Pairing_init(Pairing *pairing, PyObject *args) {
     // only argument is the parameters
     PyObject *py_params;
-    if (!PyArg_ParseTuple(args, "O", &py_params)) {
-        PyErr_SetString(PyExc_TypeError, "could not parse arguments");
-        return -1;
-    }
-    // check the type of the argument
-    if (!PyObject_TypeCheck(py_params, &ParametersType)) {
-        PyErr_SetString(PyExc_TypeError, "expected Parameter, got something else");
+    if (!PyArg_ParseTuple(args, "O!", &ParametersType, &py_params)) {
+        PyErr_SetString(PyExc_TypeError, "could not parse arguments, expected Parameters object");
         return -1;
     }
     // cast the argument
@@ -234,13 +227,8 @@ PyObject *Pairing_apply(PyObject *py_pairing, PyObject *args) {
     // we expect two elements
     PyObject *py_lft;
     PyObject *py_rgt;
-    if (!PyArg_ParseTuple(args, "OO", &py_lft, &py_rgt)) {
-        PyErr_SetString(PyExc_TypeError, "could not parse arguments");
-        return NULL;
-    }
-    // check the types on the arguments
-    if (!PyObject_TypeCheck(py_lft, &ElementType) || !PyObject_TypeCheck(py_rgt, &ElementType)) {
-        PyErr_SetString(PyExc_TypeError, "arguments must be two Elements");
+    if (!PyArg_ParseTuple(args, "O!O!", &ElementType, &py_lft, &ElementType, &py_rgt)) {
+        PyErr_SetString(PyExc_TypeError, "could not parse arguments, expected two Elements");
         return NULL;
     }
     // declare the result element
@@ -353,7 +341,7 @@ PyDoc_STRVAR(Element__doc__,
     "\n"
     "Basic usage:\n"
     "\n"
-    "Element(pairing, Zr, element_string) -> Element\n"
+    "Element(pairing: Pairing, group: int, string: str) -> Element\n"
     "\n"
     "Most of the basic arithmetic operations apply. Please note that many of them\n"
     "do not make sense between groups, and that not all of these are checked for.");
@@ -368,7 +356,6 @@ Element *Element_create(void) {
     }
     // set the ready flag to 0
     element->ready = 0;
-    // return the object
     return element;
 }
 
@@ -391,14 +378,9 @@ int Element_init(PyObject *py_element, PyObject *args) {
     // required arguments are the pairing and the group
     PyObject *py_pairing;
     enum Group group;
-    char *element_string = NULL;
-    if (!PyArg_ParseTuple(args, "Ois", &py_pairing, &group, &element_string)) {
-        PyErr_SetString(PyExc_TypeError, "could not parse arguments");
-        return -1;
-    }
-    // check the type of arguments
-    if (!PyObject_TypeCheck(py_pairing, &PairingType)) {
-        PyErr_SetString(PyExc_TypeError, "the first argument should be a Pairing object");
+    char *string = NULL;
+    if (!PyArg_ParseTuple(args, "O!is", &PairingType, &py_pairing, &group, &string)) {
+        PyErr_SetString(PyExc_TypeError, "could not parse arguments, expected Pairing object, group, and string");
         return -1;
     }
     // cast the arguments
@@ -414,7 +396,7 @@ int Element_init(PyObject *py_element, PyObject *args) {
     }
     element->pairing = pairing;
     // set the element to the string
-    element_set_str(element->pbc_element, element_string, 10);
+    element_set_str(element->pbc_element, string, 10);
     // increment the reference count on the pairing and set the ready flag
     Py_INCREF(element->pairing);
     element->ready = 1;
@@ -425,20 +407,8 @@ PyObject *Element_from_int(PyObject *cls, PyObject *args) {
     // required arguments are the pairing and the group
     PyObject *py_pairing;
     PyObject *py_val;
-    if (!PyArg_ParseTuple(args, "OO", &py_pairing, &py_val)) {
-        PyErr_SetString(PyExc_TypeError, "could not parse arguments");
-        return NULL;
-    }
-    // check the type of arguments
-    if (!PyObject_TypeCheck(py_pairing, &PairingType)) {
-        PyErr_SetString(PyExc_TypeError, "the first argument should be a Pairing object");
-        return NULL;
-    }
-    // cast the arguments
-    Pairing *pairing = (Pairing *)py_pairing;
-    // check the type of the number
-    if (!PyLong_Check(py_val)) {
-        PyErr_SetString(PyExc_TypeError, "the second argument should be an integer");
+    if (!PyArg_ParseTuple(args, "O!O!", &PairingType, &py_pairing, &PyLong_Type, &py_val)) {
+        PyErr_SetString(PyExc_TypeError, "could not parse arguments, expected Pairing object and number");
         return NULL;
     }
     // convert the number to an mpz_t
@@ -462,13 +432,8 @@ PyObject *Element_zero(PyObject *cls, PyObject *args) {
     // required arguments are the pairing and the group
     PyObject *py_pairing;
     enum Group group;
-    if (!PyArg_ParseTuple(args, "Oi", &py_pairing, &group)) {
-        PyErr_SetString(PyExc_TypeError, "could not parse arguments");
-        return NULL;
-    }
-    // check the type of arguments
-    if (!PyObject_TypeCheck(py_pairing, &PairingType)) {
-        PyErr_SetString(PyExc_TypeError, "the first argument should be a Pairing object");
+    if (!PyArg_ParseTuple(args, "O!i", &PairingType, &py_pairing, &group)) {
+        PyErr_SetString(PyExc_TypeError, "could not parse arguments, expected Pairing object and group");
         return NULL;
     }
     // cast the arguments
@@ -495,13 +460,8 @@ PyObject *Element_one(PyObject *cls, PyObject *args) {
     // required arguments are the pairing and the group
     PyObject *py_pairing;
     enum Group group;
-    if (!PyArg_ParseTuple(args, "Oi", &py_pairing, &group)) {
-        PyErr_SetString(PyExc_TypeError, "could not parse arguments");
-        return NULL;
-    }
-    // check the type of arguments
-    if (!PyObject_TypeCheck(py_pairing, &PairingType)) {
-        PyErr_SetString(PyExc_TypeError, "the first argument should be a Pairing object");
+    if (!PyArg_ParseTuple(args, "O!i", &PairingType, &py_pairing, &group)) {
+        PyErr_SetString(PyExc_TypeError, "could not parse arguments, expected Pairing object and group");
         return NULL;
     }
     // cast the arguments
@@ -528,13 +488,8 @@ PyObject *Element_random(PyObject *cls, PyObject *args) {
     // required arguments are the pairing and the group
     PyObject *py_pairing;
     enum Group group;
-    if (!PyArg_ParseTuple(args, "Oi", &py_pairing, &group)) {
-        PyErr_SetString(PyExc_TypeError, "could not parse arguments");
-        return NULL;
-    }
-    // check the type of arguments
-    if (!PyObject_TypeCheck(py_pairing, &PairingType)) {
-        PyErr_SetString(PyExc_TypeError, "the first argument should be a Pairing object");
+    if (!PyArg_ParseTuple(args, "O!i", &PairingType, &py_pairing, &group)) {
+        PyErr_SetString(PyExc_TypeError, "could not parse arguments, expected Pairing object and group");
         return NULL;
     }
     // cast the arguments
@@ -561,18 +516,9 @@ PyObject *Element_from_hash(PyObject *cls, PyObject *args) {
     // required arguments are the pairing and the group
     PyObject *py_pairing;
     enum Group group;
-    PyObject *bytes;
-    if (!PyArg_ParseTuple(args, "OiO", &py_pairing, &group, &bytes)) {
-        PyErr_SetString(PyExc_TypeError, "could not parse arguments");
-        return NULL;
-    }
-    // check the type of arguments
-    if (!PyObject_TypeCheck(py_pairing, &PairingType)) {
-        PyErr_SetString(PyExc_TypeError, "the first argument should be a Pairing object");
-        return NULL;
-    }
-    if (!PyBytes_Check(bytes)) {
-        PyErr_SetString(PyExc_TypeError, "the third argument should be a Pairing object");
+    PyObject *py_bytes;
+    if (!PyArg_ParseTuple(args, "O!iO!", &PairingType, &py_pairing, &group, &PyBytes_Type, &py_bytes)) {
+        PyErr_SetString(PyExc_TypeError, "could not parse arguments, expected Pairing object, group, and bytes");
         return NULL;
     }
     // cast the arguments
@@ -588,9 +534,9 @@ PyObject *Element_from_hash(PyObject *cls, PyObject *args) {
     }
     element->pairing = pairing;
     // convert the bytes to an element
-    int size = PyBytes_Size(bytes);
-    unsigned char *string = (unsigned char *)PyBytes_AsString(bytes);
-    element_from_hash(element->pbc_element, string, size);
+    int size = PyBytes_Size(py_bytes);
+    unsigned char *bytes = (unsigned char *)PyBytes_AsString(py_bytes);
+    element_from_hash(element->pbc_element, bytes, size);
     // increment the reference count on the pairing and set the ready flag
     Py_INCREF(element->pairing);
     element->ready = 1;
@@ -601,18 +547,9 @@ PyObject *Element_from_bytes(PyObject *cls, PyObject *args) {
     // required arguments are the pairing and the group
     PyObject *py_pairing;
     enum Group group;
-    PyObject *bytes;
-    if (!PyArg_ParseTuple(args, "OiO", &py_pairing, &group, &bytes)) {
-        PyErr_SetString(PyExc_TypeError, "could not parse arguments");
-        return NULL;
-    }
-    // check the type of arguments
-    if (!PyObject_TypeCheck(py_pairing, &PairingType)) {
-        PyErr_SetString(PyExc_TypeError, "the first argument should be a Pairing object");
-        return NULL;
-    }
-    if (!PyBytes_Check(bytes)) {
-        PyErr_SetString(PyExc_TypeError, "the third argument should be a Pairing object");
+    PyObject *py_bytes;
+    if (!PyArg_ParseTuple(args, "O!iO!", &PairingType, &py_pairing, &group, &PyBytes_Type, &py_bytes)) {
+        PyErr_SetString(PyExc_TypeError, "could not parse arguments, expected Pairing object, group, and bytes");
         return NULL;
     }
     // cast the arguments
@@ -628,8 +565,8 @@ PyObject *Element_from_bytes(PyObject *cls, PyObject *args) {
     }
     element->pairing = pairing;
     // convert the bytes to an element
-    unsigned char *string = (unsigned char *)PyBytes_AsString(bytes);
-    element_from_bytes(element->pbc_element, string);
+    unsigned char *bytes = (unsigned char *)PyBytes_AsString(py_bytes);
+    element_from_py_bytes(element->pbc_element, bytes);
     // increment the reference count on the pairing and set the ready flag
     Py_INCREF(element->pairing);
     element->ready = 1;
@@ -640,18 +577,9 @@ PyObject *Element_from_bytes_compressed(PyObject *cls, PyObject *args) {
     // required arguments are the pairing and the group
     PyObject *py_pairing;
     enum Group group;
-    PyObject *bytes;
-    if (!PyArg_ParseTuple(args, "OiO", &py_pairing, &group, &bytes)) {
-        PyErr_SetString(PyExc_TypeError, "could not parse arguments");
-        return NULL;
-    }
-    // check the type of arguments
-    if (!PyObject_TypeCheck(py_pairing, &PairingType)) {
-        PyErr_SetString(PyExc_TypeError, "the first argument should be a Pairing object");
-        return NULL;
-    }
-    if (!PyBytes_Check(bytes)) {
-        PyErr_SetString(PyExc_TypeError, "the third argument should be a Pairing object");
+    PyObject *py_bytes;
+    if (!PyArg_ParseTuple(args, "O!iO!", &PairingType, &py_pairing, &group, &PyBytes_Type, &py_bytes)) {
+        PyErr_SetString(PyExc_TypeError, "could not parse arguments, expected Pairing object, group, and bytes");
         return NULL;
     }
     // cast the arguments
@@ -667,8 +595,8 @@ PyObject *Element_from_bytes_compressed(PyObject *cls, PyObject *args) {
     }
     element->pairing = pairing;
     // convert the bytes to an element
-    unsigned char *string = (unsigned char *)PyBytes_AsString(bytes);
-    element_from_bytes_compressed(element->pbc_element, string);
+    unsigned char *bytes = (unsigned char *)PyBytes_AsString(py_bytes);
+    element_from_bytes_compressed(element->pbc_element, bytes);
     // increment the reference count on the pairing and set the ready flag
     Py_INCREF(element->pairing);
     element->ready = 1;
@@ -679,18 +607,9 @@ PyObject *Element_from_bytes_x_only(PyObject *cls, PyObject *args) {
     // required arguments are the pairing and the group
     PyObject *py_pairing;
     enum Group group;
-    PyObject *bytes;
-    if (!PyArg_ParseTuple(args, "OiO", &py_pairing, &group, &bytes)) {
-        PyErr_SetString(PyExc_TypeError, "could not parse arguments");
-        return NULL;
-    }
-    // check the type of arguments
-    if (!PyObject_TypeCheck(py_pairing, &PairingType)) {
-        PyErr_SetString(PyExc_TypeError, "the first argument should be a Pairing object");
-        return NULL;
-    }
-    if (!PyBytes_Check(bytes)) {
-        PyErr_SetString(PyExc_TypeError, "the third argument should be a Pairing object");
+    PyObject *py_bytes;
+    if (!PyArg_ParseTuple(args, "O!iO!", &PairingType, &py_pairing, &group, &PyBytes_Type, &py_bytes)) {
+        PyErr_SetString(PyExc_TypeError, "could not parse arguments, expected Pairing object, group, and bytes");
         return NULL;
     }
     // cast the arguments
@@ -706,8 +625,8 @@ PyObject *Element_from_bytes_x_only(PyObject *cls, PyObject *args) {
     }
     element->pairing = pairing;
     // convert the bytes to an element
-    unsigned char *string = (unsigned char *)PyBytes_AsString(bytes);
-    element_from_bytes_x_only(element->pbc_element, string);
+    unsigned char *bytes = (unsigned char *)PyBytes_AsString(py_bytes);
+    element_from_bytes_x_only(element->pbc_element, bytes);
     // increment the reference count on the pairing and set the ready flag
     Py_INCREF(element->pairing);
     element->ready = 1;
@@ -724,6 +643,18 @@ PyObject *Element_to_bytes(PyObject *py_element) {
     element_to_bytes(buffer, element->pbc_element);
     // return the buffer as a bytes object
     return PyBytes_FromStringAndSize((char *)buffer, size);
+}
+
+Py_hash_t Element_hash(PyObject *py_element) {
+    // cast the argument
+    Element *element = (Element *)py_element;
+    // get the size of the buffer and allocate it
+    int size = element_length_in_bytes(element->pbc_element);
+    unsigned char buffer[size];
+    // convert the element to bytes
+    element_to_bytes(buffer, element->pbc_element);
+    // return the hash of the buffer
+    return _Py_HashBytes(buffer, size) ^ (Py_hash_t)element->pbc_element->field;
 }
 
 PyObject *Element_to_bytes_compressed(PyObject *py_element) {
@@ -816,7 +747,7 @@ PyObject *Element_sub(PyObject *py_lft, PyObject *py_rgt) {
     return (PyObject *)ele_res;
 }
 
-PyObject *Element_mult(PyObject *py_lft, PyObject *py_rgt) {
+PyObject *Element_mul(PyObject *py_lft, PyObject *py_rgt) {
     // declare the result element
     Element *ele_res;
     // check the type of arguments
@@ -1129,24 +1060,6 @@ PyObject *Element_str(PyObject *py_element) {
     return PyUnicode_FromStringAndSize(buffer, size);
 }
 
-Py_hash_t Element_hash(PyObject *py_element) {
-    // cast the argument
-    Element *element = (Element *)py_element;
-    // get the size of the buffer and allocate it
-    int size = element_length_in_bytes(element->pbc_element);
-    unsigned char buffer[size];
-    // convert the element to bytes
-    element_to_bytes(buffer, element->pbc_element);
-    // initialize the hash with the field of the element
-    Py_hash_t hash = (Py_hash_t)element->pbc_element->field;
-    // mix the bytes into the hash
-    for (int i = 0; i < size; i++) {
-        hash ^= buffer[i];
-        hash *= 16777619;
-    }
-    return hash;
-}
-
 PyObject *Element_order(PyObject *py_element) {
     // cast the argument
     Element *element = (Element *)py_element;
@@ -1177,49 +1090,49 @@ PyMethodDef Element_methods[] = {
 };
 
 PyNumberMethods Element_num_meths = {
-    Element_add,               // binaryfunc nb_add;
-    Element_sub,               // binaryfunc nb_subtract;
-    Element_mult,              // binaryfunc nb_multiply;
-    0,                         // binaryfunc nb_remainder;
-    0,                         // binaryfunc nb_divmod;
-    Element_pow,               // ternaryfunc nb_power;
-    (unaryfunc)Element_neg,    // unaryfunc nb_negative;
-    0,                         // unaryfunc nb_positive;
-    0,                         // unaryfunc nb_absolute;
-    0,                         // inquiry nb_bool;
-    (unaryfunc)Element_invert, // unaryfunc nb_invert;
-    0,                         // binaryfunc nb_lshift;
-    0,                         // binaryfunc nb_rshift;
-    0,                         // binaryfunc nb_and;
-    0,                         // binaryfunc nb_xor;
-    0,                         // binaryfunc nb_or;
-    (unaryfunc)Element_int,    // unaryfunc nb_int;
-    0,                         // void *nb_reserved;
-    0,                         // unaryfunc nb_float;
-    0,                         // binaryfunc nb_inplace_add;
-    0,                         // binaryfunc nb_inplace_subtract;
-    0,                         // binaryfunc nb_inplace_multiply;
-    0,                         // binaryfunc nb_inplace_remainder;
-    0,                         // ternaryfunc nb_inplace_power;
-    0,                         // binaryfunc nb_inplace_lshift;
-    0,                         // binaryfunc nb_inplace_rshift;
-    0,                         // binaryfunc nb_inplace_and;
-    0,                         // binaryfunc nb_inplace_xor;
-    0,                         // binaryfunc nb_inplace_or;
-    0,                         // binaryfunc nb_floor_divide;
-    Element_div,               // binaryfunc nb_true_divide;
-    0,                         // binaryfunc nb_inplace_floor_divide;
-    0,                         // binaryfunc nb_inplace_true_divide;
+    Element_add,    // binaryfunc nb_add;
+    Element_sub,    // binaryfunc nb_subtract;
+    Element_mul,    // binaryfunc nb_multiply;
+    0,              // binaryfunc nb_remainder;
+    0,              // binaryfunc nb_divmod;
+    Element_pow,    // ternaryfunc nb_power;
+    Element_neg,    // unaryfunc nb_negative;
+    0,              // unaryfunc nb_positive;
+    0,              // unaryfunc nb_absolute;
+    0,              // inquiry nb_bool;
+    Element_invert, // unaryfunc nb_invert;
+    0,              // binaryfunc nb_lshift;
+    0,              // binaryfunc nb_rshift;
+    0,              // binaryfunc nb_and;
+    0,              // binaryfunc nb_xor;
+    0,              // binaryfunc nb_or;
+    Element_int,    // unaryfunc nb_int;
+    0,              // void *nb_reserved;
+    0,              // unaryfunc nb_float;
+    0,              // binaryfunc nb_inplace_add;
+    0,              // binaryfunc nb_inplace_subtract;
+    0,              // binaryfunc nb_inplace_multiply;
+    0,              // binaryfunc nb_inplace_remainder;
+    0,              // ternaryfunc nb_inplace_power;
+    0,              // binaryfunc nb_inplace_lshift;
+    0,              // binaryfunc nb_inplace_rshift;
+    0,              // binaryfunc nb_inplace_and;
+    0,              // binaryfunc nb_inplace_xor;
+    0,              // binaryfunc nb_inplace_or;
+    0,              // binaryfunc nb_floor_divide;
+    Element_div,    // binaryfunc nb_true_divide;
+    0,              // binaryfunc nb_inplace_floor_divide;
+    0,              // binaryfunc nb_inplace_true_divide;
 };
 
 PySequenceMethods Element_sq_meths = {
-    Element_len,               // inquiry sq_length;
-    0,                         // binaryfunc sq_concat;
-    0,                         // intargfunc sq_repeat;
-    Element_item,              // intargfunc sq_item;
-    0,                         // intintargfunc sq_slice;
-    0,                         // intobjargproc sq_ass_item;
-    0,                         // intintobjargproc sq_ass_slice
+    Element_len,    // inquiry sq_length;
+    0,              // binaryfunc sq_concat;
+    0,              // intargfunc sq_repeat;
+    Element_item,   // intargfunc sq_item;
+    0,              // intintargfunc sq_slice;
+    0,              // intobjargproc sq_ass_item;
+    0,              // intintobjargproc sq_ass_slice
 };
 
 PyTypeObject ElementType = {
@@ -1267,6 +1180,14 @@ PyTypeObject ElementType = {
 *                                    Module                                    *
 *******************************************************************************/
 
+PyDoc_STRVAR(pypbc__doc__,
+    "A Python wrapper for the PBC library.\n"
+    "\n"
+    "This module provides a Python interface to the PBC library, which is a\n"
+    "library for pairing-based cryptography. It provides a Pythonic interface\n"
+    "to the PBC library, allowing for the creation of pairings, elements, and\n"
+    "parameters, as well as operations on these objects.\n");
+
 PyMethodDef pypbc_methods[] = {
     {NULL},
 };
@@ -1274,7 +1195,7 @@ PyMethodDef pypbc_methods[] = {
 PyModuleDef pypbc_module = {
     PyModuleDef_HEAD_INIT,
     "pypbc",
-    "Python wrapper for the PBC (Pairing-Based Cryptography) library",
+    pypbc__doc__,
     -1,
     pypbc_methods,
 };

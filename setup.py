@@ -10,6 +10,6 @@ setup(
     description="Python wrapper for the PBC (Pairing-Based Cryptography) library",
     author="Jemtaly (original by Geremy Condra)",
     author_email="Jemtaly@outlook.com",
-    url="github.com/Jemtaly/pypbc",
+    url="https://www.github.com/Jemtaly/pypbc",
     ext_modules=[pypbc_module],
 )

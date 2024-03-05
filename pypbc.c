@@ -411,6 +411,8 @@ PyObject *Element_from_int(PyObject *cls, PyObject *args) {
         PyErr_SetString(PyExc_TypeError, "could not parse arguments, expected Pairing object and number");
         return NULL;
     }
+    // cast the arguments
+    Pairing *pairing = (Pairing *)py_pairing;
     // convert the number to an mpz_t
     mpz_t mpz_val;
     mpz_init_from_pynum(mpz_val, py_val);
@@ -566,7 +568,7 @@ PyObject *Element_from_bytes(PyObject *cls, PyObject *args) {
     element->pairing = pairing;
     // convert the bytes to an element
     unsigned char *bytes = (unsigned char *)PyBytes_AsString(py_bytes);
-    element_from_py_bytes(element->pbc_element, bytes);
+    element_from_bytes(element->pbc_element, bytes);
     // increment the reference count on the pairing and set the ready flag
     Py_INCREF(element->pairing);
     element->ready = 1;

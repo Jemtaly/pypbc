@@ -2,7 +2,7 @@
 
 PyPBC is a Python wrapper for the PBC (Pairing-Based Cryptography) library, allowing for easy use of pairing-based cryptography in Python.
 
-***Note: Since the PBC library hasn't been maintained for a long time, there are some security issues, and the performance is lower than the current alternatives. Therefore, unless you have special requirements, it is not recommended to use this library. You can consider switching to [pymcl](https://github.com/Jemtaly/pymcl), which is a Python wrapper for the faster [mcl](https://github.com/herumi/mcl) library, supporting the BLS12-381 curve.***
+***Note: Since the PBC library hasn't been maintained for a long time, there are some security issues, and the performance is lower than the current alternatives. Therefore, unless you have special requirements, it is not recommended to use this library. You can consider switching to [pymcl](https://github.com/Jemtaly/pymcl), which is a Python wrapper for the faster [mcl](https://github.com/herumi/mcl) library, and supports the Windows platform, and currently provides support for the BLS12-381 curve.***
 
 ## Installation
 

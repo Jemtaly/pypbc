@@ -14,7 +14,7 @@
 * Licensed under GPLv3                                                         *
 * Released 11 October 2009                                                     *
 *                                                                              *
-* This file contains the types and functions needed to use PBC from Python3.   *
+* This file contains the types and functions needed to use PBC from Python 3.  *
 *******************************************************************************/
 
 // initialize a GMP integer from a Python number

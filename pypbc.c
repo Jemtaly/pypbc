@@ -665,8 +665,22 @@ Py_hash_t Element_hash(PyObject *py_element) {
     unsigned char buffer[size];
     // convert the element to bytes
     element_to_bytes(buffer, element->pbc_element);
-    // return the hash of the buffer
-    return _Py_HashBytes(buffer, size) ^ (Py_hash_t)element->pbc_element->field;
+    // initialize the hash
+    Py_uhash_t hash = 14695981039346656037U;
+    // iterate over the string
+    for (Py_ssize_t i = 0; i < size; i++) {
+        hash ^= (Py_uhash_t)buffer[i];
+        hash *= 1099511628211U;
+    }
+    // add the pointer to the hash
+    Py_uhash_t ptr = (Py_uhash_t)element->pbc_element->field;
+    hash ^= ptr >> 4 | ptr << (8 * sizeof(ptr) - 4);
+    // check if the hash is invalid
+    if (hash == (Py_uhash_t)-1) {
+        hash = (Py_uhash_t)-2;
+    }
+    // return the hash
+    return (Py_hash_t)hash;
 }
 
 PyObject *Element_to_bytes_compressed(PyObject *py_element) {

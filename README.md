@@ -101,8 +101,8 @@ The following methods are available in the `pypbc` module:
 
 - `__add__(self, other: Element) -> Element`: Return the sum of the elements.
 - `__sub__(self, other: Element) -> Element`: Return the difference of the elements.
-- `__mul__(self, other: Element | int) -> Element`: Return the product of the elements, same as `__add__` if the two operands are both in G1, G2 or GT, same as `__pow__` if one of the operands is an integer or an element of Zr.
-- `__truediv__(self, other: Element) -> Element`: Return the quotient of the elements, same as `__sub__` if the two operands are both in G1, G2 or GT.
+- `__mul__(self, other: Element | int) -> Element`: Return the product of the elements, same as `__add__` method if the two operands are both in G1, G2 or GT, and same as `__pow__` if one of the operands is an integer or an element of Zr and another is in G1, G2 or GT.
+- `__truediv__(self, other: Element) -> Element`: Return the quotient of the elements, the two operands must be in same field, it is same as `__sub__` if the two operands are both in G1, G2 or GT. ***Notice: Division between elements in G1,G2 or GT and elements in Zr is not allowed because this is not supported by the original pbc library. If you want to perform this operation, you can multiply the inverse of the Zr element (`g * ~x`) instead.***
 - `__pow__(self, other: Element | int) -> Element`: Return the power of the element, the exponent can be an integer or an element of Zr.
 - `__neg__(self) -> Element`: Return the additive inverse of the element.
 - `__invert__(self) -> Element`: Return the multiplicative inverse of the element, same as `__neg__` if the element is in G1, G2 or GT.

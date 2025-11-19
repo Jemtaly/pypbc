@@ -1,6 +1,6 @@
-#! /usr/bin/env python3
+#!/usr/bin/env python3
 
-from setuptools import setup, Extension
+from setuptools import Extension, setup
 
 pypbc_module = Extension("pypbc", sources=["pypbc.c"], libraries=["pbc"])
 
@@ -12,4 +12,7 @@ setup(
     author_email="Jemtaly@outlook.com",
     url="https://www.github.com/Jemtaly/pypbc",
     ext_modules=[pypbc_module],
+    packages=["pypbc"],
+    package_data={"pypbc": ["py.typed", "__init__.pyi"]},
+    include_package_data=True,
 )

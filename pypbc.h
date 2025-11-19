@@ -21,13 +21,11 @@
 * This file contains the types and functions needed to use PBC from Python 3.  *
 *******************************************************************************/
 
-// we need debugging symbols for compile warnings
 #define PBC_DEBUG
 
 // used to see which group a given element is in
 enum Group {G1, G2, GT, Zr};
 
-// We're going to need a few types
 // the param type
 typedef struct {
     PyObject_HEAD

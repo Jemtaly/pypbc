@@ -1,4 +1,5 @@
-#!/bin/bash
+#!/usr/bin/bash
+
 echo "Installing pypbc..." &&
 sudo apt update &&
 sudo apt-get install -y libgmp-dev && 

@@ -12,7 +12,7 @@ setup(
     author_email="Jemtaly@outlook.com",
     url="https://www.github.com/Jemtaly/pypbc",
     ext_modules=[pypbc_module],
-    packages=["pypbc"],
-    package_data={"pypbc": ["py.typed", "__init__.pyi"]},
+    packages=["pypbc-stubs"],
+    package_data={"pypbc-stubs": ["py.typed", "__init__.pyi"]},
     include_package_data=True,
 )

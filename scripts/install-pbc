@@ -1,0 +1,39 @@
+#!/usr/bin/bash
+
+set -e
+
+show_help() {
+	echo "Usage: install-pbc [-p prefix] [-v version] [-h]"
+	echo "  -p prefix   Specify installation prefix (default: /usr)"
+	echo "  -v version  Specify pbc version to install (default: 1.0.0)"
+	echo "  -h          Show this help message"
+}
+
+PREFIX="/usr"
+VERSION="1.0.0"
+
+while getopts "p:v:sdh" opt; do
+	case ${opt} in
+	p) PREFIX=$OPTARG ;;
+	v) VERSION=$OPTARG ;;
+	h)
+		show_help
+		exit 0
+		;;
+	\?)
+		show_help
+		exit 1
+		;;
+	esac
+done
+
+echo "Installing pbc version $VERSION with prefix $PREFIX..."
+wget "https://crypto.stanford.edu/pbc/files/pbc-$VERSION.tar.gz"
+tar -xf pbc-$VERSION.tar.gz
+cd pbc-$VERSION
+./configure --prefix="$PREFIX" --enable-shared --disable-static
+make
+make install
+ldconfig
+cd ..
+echo "pbc version $VERSION installed successfully!"

@@ -1,0 +1,7 @@
+#!/bin/bash
+
+set -e
+
+apt update
+apt-get install -y libgmp-dev  # PBC dependency
+apt-get install -y build-essential flex bison  # Build tools

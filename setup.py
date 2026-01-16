@@ -2,7 +2,11 @@
 
 from setuptools import Extension, setup
 
-pypbc_module = Extension("pypbc", sources=["pypbc.c"], libraries=["pbc"])
+pypbc_module = Extension(
+    "pypbc",
+    sources=["pypbc.c"],
+    libraries=["pbc"],
+)
 
 setup(
     name="pypbc",

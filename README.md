@@ -4,9 +4,36 @@ PyPBC is a Python wrapper for the PBC (Pairing-Based Cryptography) library, allo
 
 ## Installation
 
-For Debian-based systems, you can simply install the package using the provided `install.sh` script.
+This project follows the common "system dependency + Python wrapper" pattern:
 
-For other systems, please refer to the instructions [here](INSTALL).
+1) Install system dependencies (GMP + PBC)
+2) Install the Python package (pypbc)
+
+### Install GMP and other dependencies
+
+For Debian / Ubuntu systems, you can use the provided script to install the necessary dependencies for PBC:
+
+```bash
+sudo scripts/install-pbc-deps-debian
+```
+
+For other systems, you will need to manually install [GMP](https://gmplib.org/) and the build tools (gcc, flex, bison) as described in the [PBC installation instructions](https://crypto.stanford.edu/pbc/manual/installation.html).
+
+### Install PBC
+
+You can use the provided script to install the PBC library:
+
+```bash
+sudo scripts/install-pbc
+```
+
+### Install pypbc
+
+Once GMP and PBC are installed, you can install pypbc via pip (for Python v3):
+
+```bash
+python3 -m pip install .
+```
 
 ## Basic Usage
 

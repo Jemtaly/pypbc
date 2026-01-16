@@ -6,7 +6,7 @@ pypbc_module = Extension("pypbc", sources=["pypbc.c"], libraries=["pbc"])
 
 setup(
     name="pypbc",
-    version="1.0",
+    version="1.0.0",
     description="Python wrapper for the PBC (Pairing-Based Cryptography) library",
     author="Jemtaly (original by Geremy Condra)",
     author_email="Jemtaly@outlook.com",

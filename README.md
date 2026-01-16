@@ -71,9 +71,18 @@ z2 = Element.random(pairing, Zr)
 assert pairing.apply(g1 ** z1, g2 ** z2) == pairing.apply(g1, g2) ** (z1 * z2)
 ```
 
-## Method list
+## API Reference
 
-The following methods are available in the `pypbc` module:
+### Group Enum
+
+The library defines the following groups:
+
+- `Zr`: The multiplicative group of integers modulo the order of the pairing.
+- `G1`: The first source group of the pairing.
+- `G2`: The second source group of the pairing.
+- `GT`: The target group of the pairing.
+
+The Following classes and methods are available:
 
 ### `Parameters`
 
@@ -91,21 +100,21 @@ The following methods are available in the `pypbc` module:
     
 #### Constructors
 
-- `__init__(self, pairing: Pairing, type: int, string: str) -> None`: Initialize the element from a string.
+- `__init__(self, pairing: Pairing, type: Group, string: str) -> None`: Initialize the element from a string representation.
 - `from_int(pairing: Pairing, value: int) -> Element`: Return an element in Zr from the given integer.
-- `random(pairing: Pairing, type: int) -> Element`: Return a random element of the given type.
-- `zero(pairing: Pairing, type: int) -> Element`: Return the additive identity element of the given type.
-- `one(pairing: Pairing, type: int) -> Element`: Return the multiplicative identity element of the given type.
-- `from_hash(pairing: Pairing, type: int, data: bytes) -> Element`: Return an element from the given hash.
+- `random(pairing: Pairing, type: Group) -> Element`: Return a random element of the given type.
+- `zero(pairing: Pairing, type: Group) -> Element`: Return the additive identity element of the given type.
+- `one(pairing: Pairing, type: Group) -> Element`: Return the multiplicative identity element of the given type.
+- `from_hash(pairing: Pairing, type: Group, data: bytes) -> Element`: Return an element from the given hash.
 
 #### Serialize and Deserialize
 
 - `to_bytes(self) -> bytes`: Return the byte representation of the element.
 - `to_bytes_compressed(self) -> bytes`: Return the compressed byte representation of the element. (Only for G1 and G2 elements)
 - `to_bytes_x_only(self) -> bytes`: Return the x-only byte representation of the element. (Only for G1 and G2 elements)
-- `from_bytes(pairing: Pairing, type: int, data: bytes) -> Element`: Return an element from the given byte representation.
-- `from_bytes_compressed(pairing: Pairing, type: int, data: bytes) -> Element`: Return an element from the given compressed byte representation. (Only for G1 and G2 elements)
-- `from_bytes_x_only(pairing: Pairing, type: int, data: bytes) -> Element`: Return an element from the given x-only byte representation. (Only for G1 and G2 elements)
+- `from_bytes(pairing: Pairing, type: Group, data: bytes) -> Element`: Return an element from the given byte representation.
+- `from_bytes_compressed(pairing: Pairing, type: Group, data: bytes) -> Element`: Return an element from the given compressed byte representation. (Only for G1 and G2 elements)
+- `from_bytes_x_only(pairing: Pairing, type: Group, data: bytes) -> Element`: Return an element from the given x-only byte representation. (Only for G1 and G2 elements)
 
 #### Properties
 
@@ -118,7 +127,7 @@ The following methods are available in the `pypbc` module:
 - `__str__(self) -> str`: Return the string representation of the element.
 - `__int__(self) -> int`: Return the integer representation of the element (if possible).
 
-#### Hashable
+#### Hashing
 
 - `__hash__(self) -> int`: Return the hash value of the element.
 
@@ -127,7 +136,7 @@ The following methods are available in the `pypbc` module:
 - `__add__(self, other: Element) -> Element`: Return the sum of the elements.
 - `__sub__(self, other: Element) -> Element`: Return the difference of the elements.
 - `__mul__(self, other: Element | int) -> Element`: Return the product of the elements, same as `__add__` method if the two operands are both in G1, G2 or GT, and same as `__pow__` if one of the operands is an integer or an element of Zr and another is in G1, G2 or GT.
-- `__truediv__(self, other: Element) -> Element`: Return the quotient of the elements, the two operands must be in same field, it is same as `__sub__` if the two operands are both in G1, G2 or GT. ***Notice: Division between elements in G1,G2 or GT and elements in Zr is not allowed because this is not supported by the original pbc library. If you want to perform this operation, you can multiply the inverse of the Zr element (`g * ~x`) instead.***
+- `__truediv__(self, other: Element) -> Element`: Return the quotient of the elements, the two operands must be in same field, it is same as `__sub__` if the two operands are both in G1, G2 or GT. ***Notice: Division between elements in G1,G2 or GT and elements in Zr is not allowed.***
 - `__pow__(self, other: Element | int) -> Element`: Return the power of the element, the exponent can be an integer or an element of Zr.
 - `__neg__(self) -> Element`: Return the additive inverse of the element.
 - `__invert__(self) -> Element`: Return the multiplicative inverse of the element, same as `__neg__` if the element is in G1, G2 or GT.
@@ -138,3 +147,7 @@ The following methods are available in the `pypbc` module:
 - `__ne__(self, other: Element) -> bool`: Return whether the elements are not equal.
 - `is0(self) -> bool`: Return whether the element is the additive identity.
 - `is1(self) -> bool`: Return whether the element is the multiplicative identity.
+
+## Acknowledgements
+
+This project is based on the original [PyPBC](https://github.com/debatem1/pypbc) project by [Geremy Condra](https://github.com/debatem1).
